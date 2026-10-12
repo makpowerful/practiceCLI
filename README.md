@@ -52,7 +52,8 @@ playwright.config.ts        reporters, retries, baseURL, trace/video
 
 ## Prerequisites
 
-- **Node.js** 18+ (developed on v24) and npm
+- **Node.js 20.12+** (or 21.7+) and npm - required because `playwright.config.ts` uses
+  `process.loadEnvFile`, which was added in Node 20.12. Developed on v24.
 - A Playwright browser: `npx playwright install chromium`
 - For CI: **Jenkins** (Windows agent) with the plugins listed below
 
@@ -105,15 +106,27 @@ In CI the reporters are set automatically (`process.env.CI`). Trace is captured
 
 **Job:** `practiceCLI-playwright` (Pipeline from SCM, `Jenkinsfile`, branch `main`).
 
-**Trigger:** SCM polling `H/2 * * * *` - a push to `main` auto-builds within ~2 minutes.
-(GitHub can't webhook into a local Jenkins, so polling is used.)
+**Trigger:** SCM polling `H/2 * * * *`, so a push to `main` auto-builds within ~2 minutes.
+This is configured in the **Jenkins job** (Build Triggers -> Poll SCM) - there is **no
+`triggers` block in the `Jenkinsfile`**, so don't look for it there. (GitHub can't webhook
+into a local Jenkins, so polling is used.) The interval is a job-config setting; confirm it
+there.
 
-**Stages:** check tools -> `npm ci` -> install browser -> run tests.
+**Stages:**
+1. **Check tools** - `node -v`, `npm -v`
+2. **Install dependencies** - `npm ci`
+3. **Install browser** - `npx playwright install <browser>`
+4. **Fault injection (chaos)** - *optional*, runs only when `INJECT_FAULT` is checked
+   (see [Chaos testing](#chaos-testing-fault-injection))
+5. **Run tests** - `npx playwright test`
 
-**On every build (`post`):**
-- Publish JUnit results + Allure report (archived) + Playwright HTML report
-- Build a JS-free HTML summary (`email-report.html`) and **email** it
-- **On failure only:** create/comment a **Jira bug** and include its link in the email
+**`post` block (every build):**
+- `junit` - record test results for the Jenkins trend
+- `allure` - generate, publish and archive the Allure report
+- `archiveArtifacts` - archive `allure-results`, `playwright-report`, `screenshots`
+- build the JS-free HTML summary (`email-report.html`), `publishHTML` the Playwright report
+- **On failure:** run `create_jira_bug.ps1` (via the `jira-api` credential) to open/comment
+  the Jira bug, then `emailext` the summary **with the Jira link** in the body
 
 ### The automated loop
 
@@ -182,9 +195,13 @@ can verify, hands-free, that the pipeline **detects and reports** a regression (
 - When enabled, the stage runs `scripts/inject_fault.ps1`, which rewrites a locator in the
   **working copy only** (`DashboardPage.goToCart` URL assertion) and logs the exact
   before/after.
-- The change is **never committed or pushed**. Jenkins force-checks-out the branch on every
-  build, so the fault is discarded on the next run - no dirty history, no broken `main`, and
-  no build loop (which committing the break *would* cause, since SCM polling rebuilds on push).
+- The change is **never committed or pushed**. The standard Git SCM checkout runs
+  `git checkout -f <sha>` at the start of every build, which **force-overwrites the modified
+  tracked file** back to the committed version - so the fault is discarded on the next run.
+  (Verified: builds immediately after a chaos run pass with `INJECT_FAULT=false`.) No Wipe/Clean
+  workspace setting is required because only a tracked file is changed. Result: no dirty history,
+  no broken `main`, and no build loop (which committing the break *would* cause, since SCM
+  polling rebuilds on push).
 
 **How to run it**
 - Jenkins UI: *Build with Parameters* -> tick **INJECT_FAULT** -> **Build**.
