@@ -1,9 +1,14 @@
 # practiceCLI - Playwright E2E + Jenkins CI
 
 End-to-end UI tests for the [Rahul Shetty Academy practice shop](https://rahulshettyacademy.com/client)
-written in **Playwright + TypeScript** using the **Page Object Model (POM)**, wired into a
-fully autonomous **Jenkins** pipeline that runs on every push and reports results by
-**email**, **Allure**, and an auto-filed **Jira** bug on failure.
+written in **Playwright + TypeScript** using the **Page Object Model (POM)**, wired into an
+**automated Jenkins pipeline** that runs on every push and reports results by **email**,
+**Allure**, and an auto-filed **Jira** bug on failure.
+
+> **Scope:** the pipeline is automated for **detection and reporting** - it catches failures
+> and raises alerts on its own. **Repair is not automated:** fixing broken test code is done
+> by a developer (optionally with Claude Code's help) and committed by hand. See
+> [Chaos testing](#chaos-testing-fault-injection) and the note under [The automated loop](#the-automated-loop).
 
 Repo: https://github.com/makpowerful/practiceCLI
 
@@ -110,7 +115,7 @@ In CI the reporters are set automatically (`process.env.CI`). Trace is captured
 - Build a JS-free HTML summary (`email-report.html`) and **email** it
 - **On failure only:** create/comment a **Jira bug** and include its link in the email
 
-### The autonomous loop
+### The automated loop
 
 ```
 push to main  ->  Jenkins polls (~2 min)  ->  build + test
@@ -118,8 +123,10 @@ push to main  ->  Jenkins polls (~2 min)  ->  build + test
    `-- FAIL -> email (HTML summary + Jira link) + Allure + Jira bug auto-filed
 ```
 
-> Jenkins can **detect and report** failures autonomously, but it cannot **fix** broken
-> test code - that still needs a human (or an AI assistant).
+> Jenkins **detects and reports** failures automatically, but it does **not fix** broken
+> test code - repair is done by a developer (optionally with Claude Code) and committed by
+> hand. Automating repair (an agent that proposes a fix on a branch for review) is a possible
+> next step, not something this pipeline does today.
 
 ---
 
