@@ -12,7 +12,7 @@ export class CartPage {
     this.page = page;
     this.cartItems = page.locator('.cartWrap li.items');
     this.itemNames = page.locator('.cartWrap li.items h3');
-    this.deleteButtons = page.locator('.cartWrap .btn');
+    this.deleteButtons = page.locator('.cartWrap .btn-danger');
     this.emptyCartMessage = page.getByText('No Products in Your Cart');
     this.checkoutButton = page.getByRole('button', { name: 'Checkout' });
   }

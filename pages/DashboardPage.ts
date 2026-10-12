@@ -40,6 +40,6 @@ export class DashboardPage {
 
   async goToCart() {
     await this.cartButton.click();
-    await expect(this.page).toHaveURL(/#\/ajklkdljkdsfksf\/cart/);
+    await expect(this.page).toHaveURL(/#\/dashboard\/cart/);
   }
 }
