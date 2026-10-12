@@ -102,6 +102,7 @@ if ($existingKey) {
     $resp = curl.exe -s -w "`n%{http_code}" -X POST -H "Authorization: Basic $b64" -H 'Content-Type: application/json' --data "@$cTmp" "$site/rest/api/3/issue/$existingKey/comment"
     $code = ($resp -split "`n")[-1]
     Write-Host "Commented on existing bug $existingKey (HTTP $code)"
+    [IO.File]::WriteAllText((Join-Path (Get-Location) 'jira-issue.txt'), $existingKey, (New-Object Text.UTF8Encoding $false))
 } else {
     $payload = @{ fields = @{
         project     = @{ key = $projectKey }
@@ -119,6 +120,7 @@ if ($existingKey) {
     if ($code -eq '201') {
         $key = ($body | ConvertFrom-Json).key
         Write-Host "Created Jira bug $key (HTTP 201)"
+        [IO.File]::WriteAllText((Join-Path (Get-Location) 'jira-issue.txt'), $key, (New-Object Text.UTF8Encoding $false))
     } else {
         Write-Host "Jira bug creation failed (HTTP $code): $body"
     }

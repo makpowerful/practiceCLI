@@ -72,31 +72,42 @@ pipeline {
                 allowMissing         : true
             ])
 
-            emailext(
-                to: 'mak_powerful@yahoo.co.in',
-                subject: "Playwright CI - ${currentBuild.currentResult}: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                mimeType: 'text/html',
-                attachmentsPattern: 'email-report.html',
-                body: """
-                    <p>Build result: <b>${currentBuild.currentResult}</b></p>
-                    <ul>
-                        <li>Job: ${env.JOB_NAME} #${env.BUILD_NUMBER}</li>
-                        <li>Browser: ${params.BROWSER}</li>
-                        <li>Allure report (detailed analysis): <a href="${env.BUILD_URL}allure/">${env.BUILD_URL}allure/</a></li>
-                        <li>Playwright HTML report (interactive, in Jenkins): <a href="${env.BUILD_URL}Playwright_20Report/">open</a></li>
-                        <li>Console log: <a href="${env.BUILD_URL}console">${env.BUILD_URL}console</a></li>
-                    </ul>
-                    <p>A JS-free HTML test summary is attached as <b>email-report.html</b>. The full interactive Playwright report (which needs JavaScript and so cannot be emailed) and the Allure report are on the Jenkins build page above.</p>
-                """.stripIndent()
-            )
-        }
+            // On failure, create/comment the Jira bug FIRST so its key can go in the email.
+            script {
+                String jiraLine = ''
+                if (currentBuild.currentResult == 'FAILURE') {
+                    bat 'if exist jira-issue.txt del /q jira-issue.txt'
+                    withCredentials([usernamePassword(credentialsId: 'jira-api',
+                                                      usernameVariable: 'JIRA_USER',
+                                                      passwordVariable: 'JIRA_TOKEN')]) {
+                        bat 'powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\create_jira_bug.ps1'
+                    }
+                    if (fileExists('jira-issue.txt')) {
+                        String jiraKey = readFile('jira-issue.txt').trim()
+                        if (jiraKey) {
+                            jiraLine = "<li>Jira bug: <a href=\"https://makpowerful.atlassian.net/browse/${jiraKey}\">${jiraKey}</a></li>"
+                        }
+                    }
+                }
 
-        failure {
-            // Auto-create (or comment on) a Jira bug when the build fails.
-            withCredentials([usernamePassword(credentialsId: 'jira-api',
-                                              usernameVariable: 'JIRA_USER',
-                                              passwordVariable: 'JIRA_TOKEN')]) {
-                bat 'powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\create_jira_bug.ps1'
+                emailext(
+                    to: 'mak_powerful@yahoo.co.in',
+                    subject: "Playwright CI - ${currentBuild.currentResult}: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                    mimeType: 'text/html',
+                    attachmentsPattern: 'email-report.html',
+                    body: """
+                        <p>Build result: <b>${currentBuild.currentResult}</b></p>
+                        <ul>
+                            <li>Job: ${env.JOB_NAME} #${env.BUILD_NUMBER}</li>
+                            <li>Browser: ${params.BROWSER}</li>
+                            ${jiraLine}
+                            <li>Allure report (detailed analysis): <a href="${env.BUILD_URL}allure/">${env.BUILD_URL}allure/</a></li>
+                            <li>Playwright HTML report (interactive, in Jenkins): <a href="${env.BUILD_URL}Playwright_20Report/">open</a></li>
+                            <li>Console log: <a href="${env.BUILD_URL}console">${env.BUILD_URL}console</a></li>
+                        </ul>
+                        <p>A JS-free HTML test summary is attached as <b>email-report.html</b>. The full interactive Playwright report (which needs JavaScript and so cannot be emailed) and the Allure report are on the Jenkins build page above.</p>
+                    """.stripIndent()
+                )
             }
         }
     }

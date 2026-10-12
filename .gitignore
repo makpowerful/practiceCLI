@@ -17,6 +17,9 @@ node_modules/
 /allure-results/
 /allure-report/
 /playwright-report.zip
+/report-mail/
+/email-report.html
+/jira-issue.txt
 
 # Local tooling / IDE
 /.playwright-cli/
