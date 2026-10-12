@@ -1,12 +1,4 @@
-// Runs shell commands on both Linux/macOS (sh) and Windows (bat) agents.
-def run(String cmd) {
-    if (isUnix()) {
-        sh cmd
-    } else {
-        bat cmd
-    }
-}
-
+// Windows Jenkins agent — uses bat steps directly.
 pipeline {
     agent any
 
@@ -29,20 +21,20 @@ pipeline {
     stages {
         stage('Check tools') {
             steps {
-                run('node -v')
-                run('npm -v')
+                bat 'node -v'
+                bat 'npm -v'
             }
         }
 
         stage('Install dependencies') {
             steps {
-                run('npm ci')
+                bat 'npm ci'
             }
         }
 
         stage('Install browser') {
             steps {
-                run("npx playwright install ${params.BROWSER}")
+                bat "npx playwright install ${params.BROWSER}"
             }
         }
 
@@ -51,7 +43,7 @@ pipeline {
                 withCredentials([usernamePassword(credentialsId: 'rsa-app-login',
                                                   usernameVariable: 'APP_USER',
                                                   passwordVariable: 'APP_PASSWORD')]) {
-                    run("npx playwright test --project=${params.BROWSER}")
+                    bat "npx playwright test --project=${params.BROWSER}"
                 }
             }
         }
