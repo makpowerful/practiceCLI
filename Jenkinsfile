@@ -58,8 +58,8 @@ pipeline {
 
             archiveArtifacts artifacts: 'allure-results/**, playwright-report/**, screenshots/**', allowEmptyArchive: true
 
-            // Zip the Playwright HTML report into one file so it can be attached to the email
-            bat 'if exist playwright-report powershell -NoProfile -Command "Compress-Archive -Path playwright-report\\* -DestinationPath playwright-report.zip -Force"'
+            // Zip the Playwright HTML report (minus trace zips / videos, which Gmail blocks) for the email
+            bat 'powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\zip_report_for_email.ps1'
 
             publishHTML(target: [
                 reportName           : 'Playwright Report',
