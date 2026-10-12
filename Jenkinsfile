@@ -29,20 +29,20 @@ pipeline {
     stages {
         stage('Check tools') {
             steps {
-                run 'node -v'
-                run 'npm -v'
+                run('node -v')
+                run('npm -v')
             }
         }
 
         stage('Install dependencies') {
             steps {
-                run 'npm ci'
+                run('npm ci')
             }
         }
 
         stage('Install browser') {
             steps {
-                run "npx playwright install ${params.BROWSER}"
+                run("npx playwright install ${params.BROWSER}")
             }
         }
 
@@ -51,7 +51,7 @@ pipeline {
                 withCredentials([usernamePassword(credentialsId: 'rsa-app-login',
                                                   usernameVariable: 'APP_USER',
                                                   passwordVariable: 'APP_PASSWORD')]) {
-                    run "npx playwright test --project=${params.BROWSER}"
+                    run("npx playwright test --project=${params.BROWSER}")
                 }
             }
         }
