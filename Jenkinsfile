@@ -52,7 +52,15 @@ pipeline {
     post {
         always {
             junit testResults: 'test-results/junit.xml', allowEmptyResults: true
-            archiveArtifacts artifacts: 'playwright-report/**, screenshots/**, test-results/**', allowEmptyArchive: true
+
+            // Allure report in Jenkins for detailed analysis (the plugin generates, publishes and archives it)
+            allure includeProperties: false, results: [[path: 'allure-results']]
+
+            archiveArtifacts artifacts: 'allure-results/**, playwright-report/**, screenshots/**', allowEmptyArchive: true
+
+            // Zip the Playwright HTML report into one file so it can be attached to the email
+            bat 'if exist playwright-report powershell -NoProfile -Command "Compress-Archive -Path playwright-report\\* -DestinationPath playwright-report.zip -Force"'
+
             publishHTML(target: [
                 reportName           : 'Playwright Report',
                 reportDir            : 'playwright-report',
@@ -61,20 +69,22 @@ pipeline {
                 alwaysLinkToLastBuild: true,
                 allowMissing         : true
             ])
+
             emailext(
                 to: 'mak_powerful@yahoo.co.in',
                 subject: "Playwright CI - ${currentBuild.currentResult}: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                 mimeType: 'text/html',
-                attachmentsPattern: 'test-results/junit.xml',
+                attachmentsPattern: 'playwright-report.zip',
                 body: """
                     <p>Build result: <b>${currentBuild.currentResult}</b></p>
                     <ul>
                         <li>Job: ${env.JOB_NAME} #${env.BUILD_NUMBER}</li>
                         <li>Browser: ${params.BROWSER}</li>
+                        <li>Allure report (detailed analysis): <a href="${env.BUILD_URL}allure/">${env.BUILD_URL}allure/</a></li>
+                        <li>Playwright HTML report (in Jenkins): <a href="${env.BUILD_URL}Playwright_20Report/">open</a></li>
                         <li>Console log: <a href="${env.BUILD_URL}console">${env.BUILD_URL}console</a></li>
-                        <li>Playwright report: <a href="${env.BUILD_URL}Playwright_20Report/">open report</a></li>
                     </ul>
-                    <p>JUnit results are attached.</p>
+                    <p>The Playwright HTML report is attached as <b>playwright-report.zip</b> — unzip and open index.html.</p>
                 """.stripIndent()
             )
         }
