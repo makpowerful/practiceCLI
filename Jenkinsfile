@@ -61,6 +61,22 @@ pipeline {
                 alwaysLinkToLastBuild: true,
                 allowMissing         : true
             ])
+            emailext(
+                to: 'mak_powerful@yahoo.co.in',
+                subject: "Playwright CI - ${currentBuild.currentResult}: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                mimeType: 'text/html',
+                attachmentsPattern: 'test-results/junit.xml',
+                body: """
+                    <p>Build result: <b>${currentBuild.currentResult}</b></p>
+                    <ul>
+                        <li>Job: ${env.JOB_NAME} #${env.BUILD_NUMBER}</li>
+                        <li>Browser: ${params.BROWSER}</li>
+                        <li>Console log: <a href="${env.BUILD_URL}console">${env.BUILD_URL}console</a></li>
+                        <li>Playwright report: <a href="${env.BUILD_URL}Playwright_20Report/">open report</a></li>
+                    </ul>
+                    <p>JUnit results are attached.</p>
+                """.stripIndent()
+            )
         }
     }
 }
