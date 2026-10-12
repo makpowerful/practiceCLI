@@ -35,6 +35,7 @@ test-data/
 scripts/
   make_email_report.ps1     builds a JS-free HTML summary for the email
   create_jira_bug.ps1       opens/comments a Jira bug on failure (with dedup)
+  inject_fault.ps1          chaos testing: breaks a locator (working copy only)
   zip_report_for_email.ps1  (legacy helper, no longer used by the pipeline)
 Jenkinsfile                 the CI pipeline (declarative, Windows agent)
 playwright.config.ts        reporters, retries, baseURL, trace/video
@@ -158,6 +159,36 @@ On a failed build, `scripts/create_jira_bug.ps1`:
 - writes the issue key to `jira-issue.txt` so the email can link to it.
 
 Target: project **`SCRUM`** on `https://makpowerful.atlassian.net`, issue type **Bug**.
+
+---
+
+## Chaos testing (fault injection)
+
+A parameter-gated **"Fault injection (chaos)"** stage deliberately breaks a locator so you
+can verify, hands-free, that the pipeline **detects and reports** a regression (test fails
+-> email -> Jira bug). This is *fault injection / chaos testing* - it exercises the
+**detect + alert** path. It does **not** self-heal; fixing the code still needs a human.
+
+**How it works**
+- A boolean parameter **`INJECT_FAULT`** (default **off**) controls it. Normal pushes and
+  unticked builds run the real tests and stay green.
+- When enabled, the stage runs `scripts/inject_fault.ps1`, which rewrites a locator in the
+  **working copy only** (`DashboardPage.goToCart` URL assertion) and logs the exact
+  before/after.
+- The change is **never committed or pushed**. Jenkins force-checks-out the branch on every
+  build, so the fault is discarded on the next run - no dirty history, no broken `main`, and
+  no build loop (which committing the break *would* cause, since SCM polling rebuilds on push).
+
+**How to run it**
+- Jenkins UI: *Build with Parameters* -> tick **INJECT_FAULT** -> **Build**.
+- Or via the API: `buildWithParameters?BROWSER=chromium&INJECT_FAULT=true`.
+
+The failing chaos build then emails the HTML summary (with the Jira link) and auto-files or
+comments the Jira bug, exactly like a real regression.
+
+> Want true self-healing (an agent that edits and pushes a fix automatically)? That's a
+> separate, larger build with real safety trade-offs - any auto-push should be gated behind
+> review.
 
 ---
 
