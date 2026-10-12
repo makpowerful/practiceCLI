@@ -1,0 +1,22 @@
+
+# Playwright
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
+
+# Secrets – commit .env.example instead
+.env
+.env.*
+!.env.example
+
+# Test output
+/screenshots/
+
+# Local tooling / IDE
+/.playwright-cli/
+.vscode/
+.idea/
+.DS_Store

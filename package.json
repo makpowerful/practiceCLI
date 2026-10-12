@@ -1,0 +1,18 @@
+{
+  "name": "practicecliagent",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test:checkout": "playwright test tests/checkout.spec.ts --project=chromium",
+    "test:checkout:headed": "playwright test tests/checkout.spec.ts --project=chromium --headed"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@playwright/test": "^1.64.0",
+    "@types/node": "^26.6.5"
+  }
+}
