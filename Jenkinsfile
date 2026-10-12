@@ -1,4 +1,4 @@
-﻿// Windows Jenkins agent â€” uses bat steps directly.
+// Windows Jenkins agent - uses bat steps directly.
 pipeline {
     agent any
 
@@ -84,9 +84,18 @@ pipeline {
                         <li>Playwright HTML report (in Jenkins): <a href="${env.BUILD_URL}Playwright_20Report/">open</a></li>
                         <li>Console log: <a href="${env.BUILD_URL}console">${env.BUILD_URL}console</a></li>
                     </ul>
-                    <p>The Playwright HTML report is attached as <b>playwright-report.zip</b> â€” unzip and open index.html.</p>
+                    <p>The Playwright HTML report is attached as <b>playwright-report.zip</b> - unzip and open index.html.</p>
                 """.stripIndent()
             )
+        }
+
+        failure {
+            // Auto-create (or comment on) a Jira bug when the build fails.
+            withCredentials([usernamePassword(credentialsId: 'jira-api',
+                                              usernameVariable: 'JIRA_USER',
+                                              passwordVariable: 'JIRA_TOKEN')]) {
+                bat 'powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\create_jira_bug.ps1'
+            }
         }
     }
 }
