@@ -4,6 +4,8 @@ pipeline {
 
     parameters {
         choice(name: 'BROWSER', choices: ['chromium', 'firefox', 'webkit'], description: 'Browser project to run')
+        booleanParam(name: 'INJECT_FAULT', defaultValue: false,
+                     description: 'Chaos test: inject a broken locator (working copy only) to verify the detect + alert path. Not committed; reverts next build.')
     }
 
     options {
@@ -35,6 +37,16 @@ pipeline {
         stage('Install browser') {
             steps {
                 bat "npx playwright install ${params.BROWSER}"
+            }
+        }
+
+        // Chaos testing: deliberately break a locator (working copy only) to prove the
+        // pipeline catches and reports regressions. Runs only when INJECT_FAULT is checked.
+        stage('Fault injection (chaos)') {
+            when { expression { return params.INJECT_FAULT } }
+            steps {
+                echo 'Chaos testing ENABLED - injecting a broken locator before the test stage.'
+                bat 'powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\inject_fault.ps1'
             }
         }
 
