@@ -20,7 +20,7 @@ export class DashboardPage {
 
   async addProductToCart(name: string) {
     const card = this.productCards.filter({ has: this.page.locator('b', { hasText: name }) });
-    await card.getByRole('button', { name: '' }).click();
+    await card.getByRole('button', { name: 'Add To Cart' }).click();
     await expect(this.toast).toContainText('Product Added To Cart');
     await this.toast.waitFor({ state: 'hidden' });
   }
@@ -40,6 +40,6 @@ export class DashboardPage {
 
   async goToCart() {
     await this.cartButton.click();
-    await expect(this.page).toHaveURL(/#\/aksjlsajdlkas\/cart/);
+    await expect(this.page).toHaveURL(/#\/dashboard\/cart/);
   }
 }
